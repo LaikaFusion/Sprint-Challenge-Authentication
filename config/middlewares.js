@@ -1,10 +1,14 @@
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 
 const jwtKey = require('../_secrets/keys').jwtKey;
+
+const saltRounds = 10;
 
 // quickly see what this file exports
 module.exports = {
   authenticate,
+  hashPass
 };
 
 // implementation details
@@ -24,4 +28,9 @@ function authenticate(req, res, next) {
       error: 'No token provided, must be set on the Authorization Header',
     });
   }
+}
+
+function hashPass(req, res, next) {
+  req.body.password = bcrypt.hashSync(req.body.password, 14);
+  next();
 }

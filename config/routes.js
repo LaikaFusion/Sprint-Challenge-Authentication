@@ -1,19 +1,54 @@
 const axios = require('axios');
-
-const { authenticate } = require('./middlewares');
+const db = require('../database/dbConfig.js');
+const jwtKey = require('../_secrets/keys').jwtKey;
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const { authenticate,hashPass } = require('./middlewares');
 
 module.exports = server => {
-  server.post('/api/register', register);
+  server.post('/api/register',hashPass, register);
   server.post('/api/login', login);
   server.get('/api/jokes', authenticate, getJokes);
 };
 
-function register(req, res) {
+async function register(req, res) {
   // implement user registration
+  if (!req.body.username || !req.body.password) {
+    res.status(400).json({ errorMessage: "Invalid body" });
+    return;
+  }
+  try{
+    const results = await db("users").insert({ ...req.body });
+    res.status(200).json({ results });
+  }
+  catch (err) {
+    res.status(500).json(err);
+  }
+
 }
 
-function login(req, res) {
+async function login(req, res) {
   // implement user login
+  if (!req.body.username || !req.body.password) {
+    res.status(400).json({ errorMessage: "Invalid body" });
+    return;
+  }
+  try {
+    const results = await db("users")
+    .where({username: req.body.username});
+
+    if (
+      results.length === 0 ||
+      (await !bcrypt.compareSync(req.body.password, results[0].password))
+    ) {
+      return res.status(401).json({ error: "You shall not pass!" });
+    } else {
+      const token = await jwt.sign({ user: req.body.username }, jwtKey);
+      return res.status(200).json({ token: token });
+    }
+  } catch (err) {
+    res.status(500).json(err);
+  }
 }
 
 function getJokes(req, res) {
