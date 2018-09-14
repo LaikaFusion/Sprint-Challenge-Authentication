@@ -29,6 +29,7 @@ async function register(req, res) {
 
 async function login(req, res) {
   // implement user login
+  console.log(req.body);
   if (!req.body.username || !req.body.password) {
     res.status(400).json({ errorMessage: "Invalid body" });
     return;
